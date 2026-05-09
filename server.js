@@ -10,6 +10,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const Booking = require('./models/Booking');
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+
 const app = express();
 
 app.use(cors({
@@ -19,7 +21,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-// Connect to MongoDB
+app.use('/api/admin', adminRoutes);
+
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 10000,
   family: 4
@@ -27,12 +30,10 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB Connected Successfully!'))
 .catch((err) => console.log('❌ MongoDB Error:', err.message));
 
-// Test route
 app.get('/', (req, res) => {
   res.json({ message: '💉 VacciCare Backend is Running!' });
 });
 
-// Save booking
 app.post('/api/bookings', async (req, res) => {
   try {
     console.log('Received booking:', req.body);
@@ -45,7 +46,6 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
-// Get all bookings
 app.get('/api/bookings', async (req, res) => {
   try {
     const bookings = await Booking.find();
