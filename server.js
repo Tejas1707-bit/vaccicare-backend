@@ -9,12 +9,16 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const Booking = require('./models/Booking');
-
+const authRoutes = require('./routes/auth');
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
-
+app.use('/api/auth', authRoutes);
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 10000,
