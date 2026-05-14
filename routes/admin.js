@@ -20,7 +20,7 @@ function isAdmin(req, res, next) {
 // Get dashboard stats
 router.get('/stats', isAdmin, async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments({ role: 'parent' });
+    const totalUsers = await User.countDocuments({ role: { $ne: 'admin' } });
     const totalBookings = await Booking.countDocuments();
     const confirmedBookings = await Booking.countDocuments({ status: 'Confirmed' });
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
@@ -58,7 +58,7 @@ router.put('/bookings/:id', isAdmin, async (req, res) => {
 // Get all users
 router.get('/users', isAdmin, async (req, res) => {
   try {
-    const users = await User.find({ role: 'parent' }).select('-password');
+    const users = await User.find({ role: { $ne: 'admin' } }).select('-password');
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
