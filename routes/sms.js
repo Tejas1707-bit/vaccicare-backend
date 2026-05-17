@@ -4,7 +4,7 @@ const router = express.Router();
 router.post('/send', async (req, res) => {
   const { phone, childName, vaccine, date, time } = req.body;
 
-  const message = `VacciCare: ${childName}'s ${vaccine} is booked on ${date} at ${time}. Please don't miss this vaccine!`;
+  const message = `VacciCare: ${childName}'s ${vaccine} is booked on ${date} at ${time}. Please don't miss this vaccine! -VacciCare`;
 
   try {
     const response = await fetch(
@@ -13,8 +13,13 @@ router.post('/send', async (req, res) => {
     );
     const data = await response.json();
     console.log('SMS response:', data);
-    res.json({ success: true, data });
+    if (data.return === true) {
+      res.json({ success: true, data });
+    } else {
+      res.json({ success: false, data });
+    }
   } catch (err) {
+    console.log('SMS error:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });

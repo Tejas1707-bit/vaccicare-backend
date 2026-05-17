@@ -11,6 +11,7 @@ const cors = require('cors');
 const Booking = require('./models/Booking');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const smsRoutes = require('./routes/sms');
 
 const app = express();
 
@@ -22,7 +23,6 @@ app.use(cors({
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-const smsRoutes = require('./routes/sms');
 app.use('/api/sms', smsRoutes);
 
 mongoose.connect(process.env.MONGO_URI, {
