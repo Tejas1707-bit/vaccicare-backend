@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Booking = require('../models/Booking');
 
-// Middleware to check admin
 function isAdmin(req, res, next) {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -17,7 +16,6 @@ function isAdmin(req, res, next) {
   }
 }
 
-// Get dashboard stats
 router.get('/stats', isAdmin, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: { $ne: 'admin' } });
@@ -31,7 +29,6 @@ router.get('/stats', isAdmin, async (req, res) => {
   }
 });
 
-// Get all bookings
 router.get('/bookings', isAdmin, async (req, res) => {
   try {
     const bookings = await Booking.find().sort({ createdAt: -1 });
@@ -41,7 +38,6 @@ router.get('/bookings', isAdmin, async (req, res) => {
   }
 });
 
-// Update booking status
 router.put('/bookings/:id', isAdmin, async (req, res) => {
   try {
     const booking = await Booking.findByIdAndUpdate(
@@ -55,7 +51,6 @@ router.put('/bookings/:id', isAdmin, async (req, res) => {
   }
 });
 
-// Get all users
 router.get('/users', isAdmin, async (req, res) => {
   try {
     const users = await User.find({ role: { $ne: 'admin' } }).select('-password');
