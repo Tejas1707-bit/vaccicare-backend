@@ -35,6 +35,15 @@ try {
   console.log('⚠️ SMS routes failed:', err.message);
 }
 
+// Email route
+try {
+  const emailRoutes = require('./routes/email');
+  app.use('/api/email', emailRoutes);
+  console.log('✅ Email routes loaded');
+} catch (err) {
+  console.log('⚠️ Email routes failed:', err.message);
+}
+
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 10000,
   family: 4
@@ -46,7 +55,6 @@ app.get('/', (req, res) => {
   res.json({ message: '💉 VacciCare Backend is Running!' });
 });
 
-// Auth middleware
 function authMiddleware(req, res, next) {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -59,7 +67,6 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// Create booking
 app.post('/api/bookings', authMiddleware, async (req, res) => {
   try {
     const booking = new Booking({ ...req.body, userId: req.userId });
@@ -70,7 +77,6 @@ app.post('/api/bookings', authMiddleware, async (req, res) => {
   }
 });
 
-// Get bookings for logged in user
 app.get('/api/bookings', authMiddleware, async (req, res) => {
   try {
     const bookings = await Booking.find({ userId: req.userId }).sort({ createdAt: -1 });
