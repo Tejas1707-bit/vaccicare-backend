@@ -8,9 +8,11 @@ if (process.env.NODE_ENV !== 'production') {
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const Booking = require('./models/Booking');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const childrenRoutes = require('./routes/children');
 
 const app = express();
 
@@ -22,14 +24,15 @@ app.use(cors({
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/children', childrenRoutes);
 
-// SMS route - load safely
+// SMS route
 try {
   const smsRoutes = require('./routes/sms');
   app.use('/api/sms', smsRoutes);
   console.log('✅ SMS routes loaded');
 } catch (err) {
-  console.log('⚠️ SMS routes failed to load:', err.message);
+  console.log('⚠️ SMS routes failed:', err.message);
 }
 
 mongoose.connect(process.env.MONGO_URI, {
@@ -43,22 +46,35 @@ app.get('/', (req, res) => {
   res.json({ message: '💉 VacciCare Backend is Running!' });
 });
 
-app.post('/api/bookings', async (req, res) => {
+// Auth middleware
+function authMiddleware(req, res, next) {
   try {
-    console.log('Received booking:', req.body);
-    const booking = new Booking(req.body);
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'No token!' });
+    const decoded = jwt.verify(token, 'vaccicare_secret_key');
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid token!' });
+  }
+}
+
+// Create booking
+app.post('/api/bookings', authMiddleware, async (req, res) => {
+  try {
+    const booking = new Booking({ ...req.body, userId: req.userId });
     await booking.save();
     res.json({ success: true, booking });
   } catch (err) {
-    console.log('Booking error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/bookings', async (req, res) => {
+// Get bookings for logged in user
+app.get('/api/bookings', authMiddleware, async (req, res) => {
   try {
-    const bookings = await Booking.find();
-    res.json(bookings);
+    const bookings = await Booking.find({ userId: req.userId }).sort({ createdAt: -1 });
+    res.json({ success: true, bookings });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
