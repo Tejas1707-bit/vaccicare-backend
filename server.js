@@ -1,31 +1,68 @@
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 const express = require('express');
-const router = express.Router();
+const mongoose = require('mongoose');
+const cors = require('cors');
+const Booking = require('./models/Booking');
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 
-router.post('/send', async (req, res) => {
-  const { phone, childName, vaccine, date, time } = req.body;
+const app = express();
 
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json());
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+
+// SMS route - load safely
+try {
+  const smsRoutes = require('./routes/sms');
+  app.use('/api/sms', smsRoutes);
+  console.log('✅ SMS routes loaded');
+} catch (err) {
+  console.log('⚠️ SMS routes failed to load:', err.message);
+}
+
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 10000,
+  family: 4
+})
+.then(() => console.log('✅ MongoDB Connected Successfully!'))
+.catch((err) => console.log('❌ MongoDB Error:', err.message));
+
+app.get('/', (req, res) => {
+  res.json({ message: '💉 VacciCare Backend is Running!' });
+});
+
+app.post('/api/bookings', async (req, res) => {
   try {
-    const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
-      method: 'POST',
-      headers: {
-        'authorization': process.env.FAST2SMS_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        route: 'q',
-        message: `VacciCare: ${childName} appointment for ${vaccine} on ${date} at ${time}. Don't miss this vaccine!`,
-        language: 'english',
-        flash: 0,
-        numbers: phone
-      })
-    });
-    const data = await response.json();
-    console.log('SMS API response:', JSON.stringify(data));
-    res.json({ success: data.return === true, data });
+    console.log('Received booking:', req.body);
+    const booking = new Booking(req.body);
+    await booking.save();
+    res.json({ success: true, booking });
   } catch (err) {
-    console.log('SMS error:', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.log('Booking error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
-module.exports = router;
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find();
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
