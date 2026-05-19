@@ -1,9 +1,11 @@
 const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -26,7 +28,7 @@ router.post('/send', async (req, res) => {
         <div style="background: #f9f9f9; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #eee;">
           <h2 style="color: #333; font-size: 18px;">Booking Confirmed! ✅</h2>
           <p style="color: #555; font-size: 14px;">Dear Parent,</p>
-          <p style="color: #555; font-size: 14px;">Your vaccine appointment has been successfully booked. Here are the details:</p>
+          <p style="color: #555; font-size: 14px;">Your vaccine appointment has been successfully booked.</p>
           <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #eee; margin: 16px 0;">
             <table style="width: 100%; font-size: 14px;">
               <tr style="border-bottom: 1px solid #f0f0f0;">
@@ -54,7 +56,6 @@ router.post('/send', async (req, res) => {
           <div style="background: #FFF8E1; padding: 12px; border-radius: 8px; margin: 16px 0;">
             <p style="color: #856404; font-size: 13px; margin: 0;">⚠️ Please arrive 10 minutes early. Bring your child's vaccination card.</p>
           </div>
-          <p style="color: #555; font-size: 13px;">If you need to reschedule, please contact your clinic directly.</p>
           <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee;">
             <p style="color: #aaa; font-size: 12px; margin: 0;">VacciCare — Kids Vaccine Planner & Booking</p>
             <p style="color: #aaa; font-size: 12px; margin: 4px 0;">vaccicare.netlify.app</p>
@@ -66,9 +67,10 @@ router.post('/send', async (req, res) => {
 
   try {
     await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent to:', to);
     res.json({ success: true, message: 'Email sent!' });
   } catch (err) {
-    console.log('Email error:', err.message);
+    console.log('❌ Email error:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
