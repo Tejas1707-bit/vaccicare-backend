@@ -67,6 +67,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
+// Create booking
 app.post('/api/bookings', authMiddleware, async (req, res) => {
   try {
     const booking = new Booking({ ...req.body, userId: req.userId });
@@ -77,10 +78,25 @@ app.post('/api/bookings', authMiddleware, async (req, res) => {
   }
 });
 
+// Get bookings for logged in user
 app.get('/api/bookings', authMiddleware, async (req, res) => {
   try {
     const bookings = await Booking.find({ userId: req.userId }).sort({ createdAt: -1 });
     res.json({ success: true, bookings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Cancel booking for logged in user
+app.put('/api/bookings/:id/cancel', authMiddleware, async (req, res) => {
+  try {
+    const booking = await Booking.findOne({ _id: req.params.id, userId: req.userId });
+    if (!booking) return res.status(404).json({ error: 'Booking not found!' });
+    if (booking.status === 'Cancelled') return res.json({ success: false, error: 'Already cancelled!' });
+    booking.status = 'Cancelled';
+    await booking.save();
+    res.json({ success: true, booking });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
